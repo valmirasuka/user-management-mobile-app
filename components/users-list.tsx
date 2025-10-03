@@ -4,22 +4,24 @@
 //
 //  Created by Valmira Suka on 2.10.25.
 //
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { ErrorState } from '@/components/ui/error-state';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { SearchInput } from '@/components/ui/search-input';
+import { UserCard } from '@/components/user-card';
+import { useSearch } from '@/hooks/use-search';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { User } from '@/types/user';
 import React from 'react';
 import {
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  View,
-  Animated
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    View
 } from 'react-native';
-import { User } from '@/types/user';
-import { UserCard } from '@/components/user-card';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ErrorState } from '@/components/ui/error-state';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface UsersListProps {
   users: User[];
@@ -41,6 +43,18 @@ export function UsersList({
   const tintColor = useThemeColor({}, 'tint');
   const iconColor = useThemeColor({}, 'icon');
 
+  const {
+    searchQuery,
+    setSearchQuery,
+    filteredUsers,
+    isSearching,
+    clearSearch,
+    searchResultsCount,
+  } = useSearch({
+    users,
+    searchFields: ['name', 'email', 'company'],
+  });
+
   const renderUser = ({ item, index }: { item: User; index: number }) => (
     <UserCard
       user={item}
@@ -51,13 +65,26 @@ export function UsersList({
 
   const renderEmpty = () => (
     <ThemedView style={styles.emptyContainer}>
-      <IconSymbol name="person.3" size={64} color={iconColor} style={styles.emptyIcon} />
+      <IconSymbol
+        name={isSearching ? "magnifyingglass" : "person.3"}
+        size={64}
+        color={iconColor}
+        style={styles.emptyIcon}
+      />
       <ThemedText type="subtitle" style={styles.emptyTitle}>
-        No users found
+        {isSearching ? 'No results found' : 'No users found'}
       </ThemedText>
       <ThemedText style={styles.emptyMessage}>
-        Pull down to refresh or check your connection
+        {isSearching
+          ? `No users match "${searchQuery}"`
+          : 'Pull down to refresh or check your connection'
+        }
       </ThemedText>
+      {isSearching && (
+        <ThemedText style={styles.clearHint}>
+          Try a different search term or clear the search
+        </ThemedText>
+      )}
     </ThemedView>
   );
 
@@ -67,7 +94,10 @@ export function UsersList({
         Users
       </ThemedText>
       <ThemedText style={styles.headerSubtitle}>
-        {users.length} {users.length === 1 ? 'user' : 'users'} found
+        {isSearching
+          ? `${searchResultsCount} of ${users.length} ${users.length === 1 ? 'user' : 'users'}`
+          : `${users.length} ${users.length === 1 ? 'user' : 'users'} found`
+        }
       </ThemedText>
     </ThemedView>
   );
@@ -94,9 +124,18 @@ export function UsersList({
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <SearchInput
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search by name or email..."
+        onClear={clearSearch}
+        showResultsCount={isSearching}
+        resultsCount={searchResultsCount}
+        isSearching={isSearching}
+      />
       <FlatList
-        data={users}
+        data={filteredUsers}
         renderItem={renderUser}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={renderHeader}
@@ -123,7 +162,7 @@ export function UsersList({
         windowSize={10}
         initialNumToRender={10}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -165,7 +204,15 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     lineHeight: 20,
   },
+  clearHint: {
+    textAlign: 'center',
+    opacity: 0.5,
+    fontSize: 14,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
   separator: {
     height: 4,
   },
 });
+
