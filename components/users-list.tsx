@@ -17,8 +17,10 @@ import { User } from '@/types/user';
 import React from 'react';
 import {
     FlatList,
+    Keyboard,
     RefreshControl,
     StyleSheet,
+    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -124,6 +126,7 @@ export function UsersList({
   }
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <SafeAreaView style={styles.container} edges={['top']}>
       <SearchInput
         value={searchQuery}
@@ -163,6 +166,7 @@ export function UsersList({
         initialNumToRender={10}
       />
     </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 

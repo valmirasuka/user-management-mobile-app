@@ -4,18 +4,17 @@
 //
 //  Created by Valmira Suka on 3.10.25.
 //
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  View
-} from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity
+} from 'react-native';
 
 interface SearchInputProps {
   value: string;
@@ -64,12 +63,12 @@ export function SearchInput({
         Animated.timing(animatedScale, {
           toValue: 0.95,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(animatedScale, {
           toValue: 1,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
     }
