@@ -11,17 +11,17 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { SearchInput } from '@/components/ui/search-input';
 import { UserCard } from '@/components/user-card';
+import { AddUserForm } from '@/components/add-user-form';
 import { useSearch } from '@/hooks/use-search';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { User } from '@/types/user';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     FlatList,
-    Keyboard,
     RefreshControl,
     StyleSheet,
-    TouchableWithoutFeedback,
-    View
+    View,
+    TouchableOpacity
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,6 +32,7 @@ interface UsersListProps {
   onRefresh: () => void;
   onUserPress?: (user: User) => void;
   refreshing?: boolean;
+  onAddUser?: (userData: { name: string; email: string; company: string; phone: string; website: string; address: string }) => void;
 }
 
 export function UsersList({
@@ -40,8 +41,10 @@ export function UsersList({
   error,
   onRefresh,
   onUserPress,
-  refreshing = false
+  refreshing = false,
+  onAddUser
 }: UsersListProps) {
+  const [showAddForm, setShowAddForm] = useState(false);
   const tintColor = useThemeColor({}, 'tint');
   const iconColor = useThemeColor({}, 'icon');
 
@@ -90,11 +93,27 @@ export function UsersList({
     </ThemedView>
   );
 
+  const handleAddUser = (userData: { name: string; email: string; company: string; phone: string; website: string; address: string }) => {
+    onAddUser?.(userData);
+    setShowAddForm(false);
+  };
+
   const renderHeader = () => (
     <ThemedView style={styles.header}>
-      <ThemedText type="title" style={styles.headerTitle}>
-        Users
-      </ThemedText>
+      <ThemedView style={styles.headerTop}>
+        <ThemedText type="title" style={styles.headerTitle}>
+          Users
+        </ThemedText>
+        {onAddUser && (
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: tintColor }]}
+            onPress={() => setShowAddForm(true)}
+          >
+            <IconSymbol name="plus" size={16} color="#fff" />
+            <ThemedText style={styles.addButtonText}>Add</ThemedText>
+          </TouchableOpacity>
+        )}
+      </ThemedView>
       <ThemedText style={styles.headerSubtitle}>
         {isSearching
           ? `${searchResultsCount} of ${users.length} ${users.length === 1 ? 'user' : 'users'}`
@@ -126,7 +145,6 @@ export function UsersList({
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <SafeAreaView style={styles.container} edges={['top']}>
       <SearchInput
         value={searchQuery}
@@ -165,8 +183,14 @@ export function UsersList({
         windowSize={10}
         initialNumToRender={10}
       />
+      
+      {showAddForm && onAddUser && (
+        <AddUserForm
+          onSubmit={handleAddUser}
+          onCancel={() => setShowAddForm(false)}
+        />
+      )}
     </SafeAreaView>
-    </TouchableWithoutFeedback>
   );
 }
 
@@ -181,8 +205,27 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 16,
   },
-  headerTitle: {
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
+  },
+  headerTitle: {
+    flex: 1,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
   headerSubtitle: {
     opacity: 0.7,

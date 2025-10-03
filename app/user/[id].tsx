@@ -4,21 +4,21 @@
 //
 //  Created by Valmira Suka on 3.10.25.
 //
+import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { Linking, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ErrorState } from '@/components/ui/error-state';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ErrorState } from '@/components/ui/error-state';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { apiService } from '@/services/api';
 import { User } from '@/types/user';
 
 export default function UserDetailsScreen() {
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{ id?: string; user?: string }>();
   const userId = Number(params.id);
 
   const [user, setUser] = useState<User | null>(null);
@@ -33,12 +33,24 @@ export default function UserDetailsScreen() {
     async function load() {
       try {
         setLoading(true);
+        // if full user data was passed via params (local user), use it directly
+        if (params.user) {
+          const parsed = JSON.parse(String(params.user)) as User;
+          console.log('Using user from navigation params (local user):', parsed);
+          if (mounted) {
+            setUser(parsed);
+            setError(null);
+          }
+          return;
+        }
+
         const data = await apiService.getUserById(userId);
         if (mounted) {
           setUser(data);
           setError(null);
         }
       } catch (e) {
+        console.error('API Error:', e);
         if (mounted) {
           setError(e instanceof Error ? e.message : 'Failed to load user');
         }
@@ -50,7 +62,7 @@ export default function UserDetailsScreen() {
     return () => {
       mounted = false;
     };
-  }, [userId]);
+  }, [userId, params.user]);
 
   if (loading) {
     return <LoadingSpinner fullScreen message="Loading user..." />;
@@ -71,7 +83,7 @@ export default function UserDetailsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: user.name }} />
+      <Stack.Screen options={{ title: user.name, headerBackTitle: '' }} />
       <ScrollView contentContainerStyle={styles.container}>
         <ThemedView style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>Contact</ThemedText>
@@ -124,5 +136,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+
+
 
 

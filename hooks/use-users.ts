@@ -51,6 +51,37 @@ export function useUsers() {
     fetchUsers(true);
   }, [fetchUsers]);
 
+  const addUser = useCallback((userData: { name: string; email: string; company: string; phone: string; website: string; address: string }) => {
+    const newUser: User = {
+      id: Date.now(), // simple local ID generation
+      name: userData.name,
+      email: userData.email,
+      company: {
+        name: userData.company,
+        catchPhrase: 'Local user - no catchphrase available',
+        bs: 'Local user business description',
+      },
+      address: {
+        street: userData.address.split(',')[0] || 'Local User Street',
+        suite: userData.address.split(',')[1]?.trim() || 'Suite 100',
+        city: userData.address.split(',')[2]?.trim() || 'Local City',
+        zipcode: userData.address.split(',')[3]?.trim() || '12345',
+        geo: {
+          lat: '0.0000',
+          lng: '0.0000',
+        },
+      },
+      phone: userData.phone,
+      website: userData.website,
+      username: userData.name.toLowerCase().replace(/\s+/g, ''),
+    };
+
+    setState(prev => ({
+      ...prev,
+      users: [newUser, ...prev.users], // insert at the top
+    }));
+  }, []);
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
@@ -60,5 +91,6 @@ export function useUsers() {
     retry,
     refresh,
     refetch: () => fetchUsers(true),
+    addUser,
   };
 }
