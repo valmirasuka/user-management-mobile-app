@@ -4,10 +4,11 @@
 //
 //  Created by Valmira Suka on 3.10.25.
 //
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
+import { AddUserForm } from '@/components/add-user-form';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ErrorState } from '@/components/ui/error-state';
@@ -15,15 +16,21 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { apiService } from '@/services/api';
+import type { RootState } from '@/store';
+import { deleteUser, updateUser } from '@/store/usersSlice';
 import { User } from '@/types/user';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function UserDetailsScreen() {
   const params = useLocalSearchParams<{ id?: string; user?: string }>();
   const userId = Number(params.id);
+  const dispatch = useDispatch();
+  const { users } = useSelector((state: RootState) => state.users);
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   const tintColor = useThemeColor({}, 'tint');
   const iconColor = useThemeColor({}, 'icon');
@@ -64,6 +71,57 @@ export default function UserDetailsScreen() {
     };
   }, [userId, params.user]);
 
+  const handleEdit = () => {
+    setShowEditForm(true);
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete User',
+      `Are you sure you want to delete ${user?.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            if (user) {
+              dispatch(deleteUser(user.id));
+              router.back();
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUpdateUser = (userData: { name: string; email: string; company: string; phone: string; website: string; address: string }) => {
+    if (!user) return;
+
+    const updatedUser: User = {
+      ...user,
+      name: userData.name,
+      email: userData.email,
+      company: {
+        ...user.company,
+        name: userData.company,
+      },
+      phone: userData.phone,
+      website: userData.website,
+      address: {
+        street: userData.address.split(',')[0] || user.address?.street || '',
+        suite: userData.address.split(',')[1]?.trim() || user.address?.suite || '',
+        city: userData.address.split(',')[2]?.trim() || user.address?.city || '',
+        zipcode: userData.address.split(',')[3]?.trim() || user.address?.zipcode || '',
+        geo: user.address?.geo || { lat: '0.0000', lng: '0.0000' },
+      },
+    };
+
+    dispatch(updateUser(updatedUser));
+    setUser(updatedUser);
+    setShowEditForm(false);
+  };
+
   if (loading) {
     return <LoadingSpinner fullScreen message="Loading user..." />;
   }
@@ -83,7 +141,17 @@ export default function UserDetailsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: user.name, headerBackTitle: '' }} />
+      <Stack.Screen 
+        options={{ 
+          title: user.name, 
+          headerBackTitle: '',
+          headerRight: () => (
+            <TouchableOpacity onPress={handleEdit} style={{ marginRight: 16 }}>
+              <IconSymbol name="pencil" size={20} color={tintColor} />
+            </TouchableOpacity>
+          ),
+        }} 
+      />
       <ScrollView contentContainerStyle={styles.container}>
         <ThemedView style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>Contact</ThemedText>
@@ -108,7 +176,33 @@ export default function UserDetailsScreen() {
             <ThemedText style={styles.value}>{address}</ThemedText>
           </ThemedView>
         </ThemedView>
+
+        <TouchableOpacity
+          style={[styles.deleteButton, { borderColor: '#ff6b6b' }]}
+          onPress={handleDelete}
+        >
+          <IconSymbol name="trash" size={16} color="#ff6b6b" />
+          <ThemedText style={[styles.deleteButtonText, { color: '#ff6b6b' }]}> 
+            Delete User
+          </ThemedText>
+        </TouchableOpacity>
       </ScrollView>
+
+      {showEditForm && (
+        <AddUserForm
+          onSubmit={handleUpdateUser}
+          onCancel={() => setShowEditForm(false)}
+          initialData={{
+            name: user.name,
+            email: user.email,
+            company: user.company.name,
+            phone: user.phone,
+            website: user.website,
+            address: address,
+          }}
+          submitLabel="Update User"
+        />
+      )}
     </>
   );
 }

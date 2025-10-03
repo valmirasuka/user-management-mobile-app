@@ -4,42 +4,29 @@
 //
 //  Created by Valmira Suka on 2.10.25.
 //
-import { useState, useEffect, useCallback } from 'react';
-import { User, UserListState } from '@/types/user';
 import { apiService } from '@/services/api';
+import type { RootState } from '@/store';
+import { addUser as addUserAction, setError, setLoading, setUsers } from '@/store/usersSlice';
+import { User } from '@/types/user';
+import { useCallback, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 export function useUsers() {
-  const [state, setState] = useState<UserListState>({
-    users: [],
-    loading: false,
-    error: null,
-    lastFetched: null,
-  });
+  const dispatch = useDispatch();
+  const state = useSelector((s: RootState) => s.users);
 
+  // Fetch users from API with caching (only fetch if no data exists)
   const fetchUsers = useCallback(async (isRefresh = false) => {
     if (!isRefresh && state.users.length > 0) return; // do not refetch if we already have data
 
-    setState(prev => ({
-      ...prev,
-      loading: true,
-      error: null,
-    }));
+    dispatch(setLoading(true));
+    dispatch(setError(null));
 
     try {
       const users = await apiService.getUsers();
-      setState(prev => ({
-        ...prev,
-        users,
-        loading: false,
-        error: null,
-        lastFetched: new Date(),
-      }));
+      dispatch(setUsers(users));
     } catch (error) {
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch users',
-      }));
+      dispatch(setError(error instanceof Error ? error.message : 'Failed to fetch users'));
     }
   }, [state.users.length]);
 
@@ -51,6 +38,7 @@ export function useUsers() {
     fetchUsers(true);
   }, [fetchUsers]);
 
+  // Add new user locally (not persisted to server)
   const addUser = useCallback((userData: { name: string; email: string; company: string; phone: string; website: string; address: string }) => {
     const newUser: User = {
       id: Date.now(), // simple local ID generation
@@ -76,10 +64,7 @@ export function useUsers() {
       username: userData.name.toLowerCase().replace(/\s+/g, ''),
     };
 
-    setState(prev => ({
-      ...prev,
-      users: [newUser, ...prev.users], // insert at the top
-    }));
+    dispatch(addUserAction(newUser));
   }, []);
 
   useEffect(() => {

@@ -9,10 +9,12 @@ import { User } from '@/types/user';
 const API_BASE_URL = 'https://jsonplaceholder.typicode.com';
 
 class ApiService {
+  // generic request method with timeout and error handling
   private async request<T>(endpoint: string): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
     try {
+      // set up abort controller for 10-second timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -24,7 +26,7 @@ class ApiService {
         signal: controller.signal,
       });
         
-        clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

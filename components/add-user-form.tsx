@@ -22,6 +22,8 @@ import {
 interface AddUserFormProps {
   onSubmit: (userData: { name: string; email: string; company: string; phone: string; website: string; address: string }) => void;
   onCancel: () => void;
+  initialData?: Partial<FormData>;
+  submitLabel?: string;
 }
 
 interface FormData {
@@ -38,14 +40,14 @@ interface FormErrors {
   email?: string;
 }
 
-export function AddUserForm({ onSubmit, onCancel }: AddUserFormProps) {
+export function AddUserForm({ onSubmit, onCancel, initialData, submitLabel = 'Add User' }: AddUserFormProps) {
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    company: '',
-    phone: '',
-    website: '',
-    address: '',
+    name: initialData?.name ?? '',
+    email: initialData?.email ?? '',
+    company: initialData?.company ?? '',
+    phone: initialData?.phone ?? '',
+    website: initialData?.website ?? '',
+    address: initialData?.address ?? '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,7 +99,7 @@ export function AddUserForm({ onSubmit, onCancel }: AddUserFormProps) {
         address: formData.address.trim() || 'Local User Street, Suite 100, Local City 12345',
       });
       
-      // reset form
+      // Reset form
       setFormData({ name: '', email: '', company: '', phone: '', website: '', address: '' });
       setErrors({});
     } catch (error) {
@@ -109,7 +111,7 @@ export function AddUserForm({ onSubmit, onCancel }: AddUserFormProps) {
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // clear error when user starts typing
+    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
@@ -278,7 +280,7 @@ export function AddUserForm({ onSubmit, onCancel }: AddUserFormProps) {
             disabled={isSubmitting}
           >
             <ThemedText style={styles.submitButtonText}>
-              {isSubmitting ? 'Adding...' : 'Add User'}
+              {isSubmitting ? 'Submitting...' : submitLabel}
             </ThemedText>
           </TouchableOpacity>
         </View>

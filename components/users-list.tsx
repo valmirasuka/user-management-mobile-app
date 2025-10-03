@@ -4,6 +4,7 @@
 //
 //  Created by Valmira Suka on 2.10.25.
 //
+import { AddUserForm } from '@/components/add-user-form';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ErrorState } from '@/components/ui/error-state';
@@ -11,17 +12,18 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { SearchInput } from '@/components/ui/search-input';
 import { UserCard } from '@/components/user-card';
-import { AddUserForm } from '@/components/add-user-form';
 import { useSearch } from '@/hooks/use-search';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { User } from '@/types/user';
 import React, { useState } from 'react';
 import {
     FlatList,
+    Keyboard,
     RefreshControl,
     StyleSheet,
-    View,
-    TouchableOpacity
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -145,7 +147,8 @@ export function UsersList({
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaView style={styles.container} edges={['top']}>
       <SearchInput
         value={searchQuery}
         onChangeText={setSearchQuery}
@@ -190,7 +193,8 @@ export function UsersList({
           onCancel={() => setShowAddForm(false)}
         />
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+      </TouchableWithoutFeedback>
   );
 }
 
